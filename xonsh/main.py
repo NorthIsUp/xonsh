@@ -271,7 +271,7 @@ class XonshMode(enum.Enum):
     interactive = 3
 
 
-def start_services(shell_kwargs, args):
+def start_services(shell_kwargs, args, env):
     """Starts up the essential services in the proper order.
     This returns the environment instance as a convenience.
     """
@@ -289,7 +289,6 @@ def start_services(shell_kwargs, args):
     events.on_timingprobe.fire(name="post_execer_init")
     # load rc files
     login = shell_kwargs.get("login", True)
-    env = builtins.__xonsh__.env
     rc = shell_kwargs.get("rc", None)
     rc = env.get("XONSHRC") if rc is None else rc
     if args.mode != XonshMode.interactive and not args.force_interactive:
@@ -349,13 +348,14 @@ def premain(argv=None):
         args.mode = XonshMode.interactive
         shell_kwargs["completer"] = True
         shell_kwargs["login"] = True
-    env = start_services(shell_kwargs, args)
+    env = builtins.__xonsh__.env
     env["XONSH_LOGIN"] = shell_kwargs["login"]
     if args.defines is not None:
         env.update([x.split("=", 1) for x in args.defines])
     env["XONSH_INTERACTIVE"] = args.force_interactive or (
         args.mode == XonshMode.interactive
     )
+    env = start_services(shell_kwargs, args, env)
     if ON_WINDOWS:
         setup_win_unicode_console(env.get("WIN_UNICODE_CONSOLE", True))
     return args
